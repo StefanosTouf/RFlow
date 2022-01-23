@@ -3,6 +3,8 @@ package rflow
 
 import arrow.core.Tuple4
 import arrow.core.Tuple5
+import arrow.core.Tuple6
+import arrow.core.Tuple7
 import arrow.fx.coroutines.parMap
 import kotlinx.coroutines.flow.*
 import reader.*
@@ -53,7 +55,7 @@ abstract class RFlow<T : Any, U> {
 
     companion object {
 
-        val unit = RFlowU.from(flowOf(Unit))
+        fun unit() = RFlowU.from(flowOf(Unit))
 
         @OptIn(ExperimentalTypeInference::class)
         fun <U> init(@BuilderInference block: suspend FlowCollector<U>.() -> Unit): RFlowU<U> =
@@ -98,33 +100,8 @@ class RFlowU<U>(override val rflow: Reader<Unit, Flow<U>>) : RFlow<Unit, U>() {
     inline fun catch(crossinline action: suspend (Unit, Throwable) -> Unit): RFlowU<U> =
         from(this.genCatch(action))
 
-    fun <T : Any> requires(r: Has<T>): RFlow1<T, U> =
-        RFlow1(this.rflow.local { rt: T -> Unit })
-
-    fun <T : Any, T2 : Any> requires(r1: Has<T>, r2: Has<T2>): RFlow2<T, T2, U> =
-        RFlow2(this.rflow.local { rt: Pair<T, T2> -> Unit })
-
-    fun <T : Any, T2 : Any, T3 : Any> requires(r: Has<T>,
-                                               r2: Has<T2>,
-                                               r3: Has<T3>): RFlow3<T, T2, T3, U> =
-        RFlow3(this.rflow.local { rt: Triple<T, T2, T3> -> Unit })
-
-    fun <T : Any, T2 : Any, T3 : Any, T4 : Any> requires(
-            r: Has<T>,
-            r2: Has<T2>,
-            r3: Has<T3>,
-            r4: Has<T4>
-    ): RFlow4<T, T2, T3, T4, U> =
-        RFlow4(this.rflow.local { rt: Tuple4<T, T2, T3, T4> -> Unit })
-
-    fun <T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any> requires(
-            r: Has<T>,
-            r2: Has<T2>,
-            r3: Has<T3>,
-            r4: Has<T4>,
-            r5: Has<T5>
-    ): RFlow5<T, T2, T3, T4, T5, U> =
-        RFlow5(this.rflow.local { rt: Tuple5<T, T2, T3, T4, T5> -> Unit })
+    fun <T : Any> requires(): RFlow1<T, U> =
+        RFlow1(this.rflow.local { })
 
     fun fulfill(): Flow<U> =
         this.rflow.runReader(Unit)
@@ -170,26 +147,8 @@ class RFlow1<T : Any, U>(override val rflow: Reader<T, Flow<U>>) : RFlow<T, U>()
     inline fun catch(crossinline action: suspend (T, Throwable) -> Unit): RFlow1<T, U> =
         from(this.genCatch(action))
 
-    fun <T2 : Any> requires(r: Has<T2>): RFlow2<T2, T, U> =
+    fun <T2 : Any> requires(): RFlow2<T2, T, U> =
         RFlow2(this.rflow.local { rt: Pair<T2, T> -> rt.second })
-
-    fun <T2 : Any, T3 : Any> requires(r2: Has<T2>, r3: Has<T3>): RFlow3<T2, T3, T, U> =
-        RFlow3(this.rflow.local { rt: Triple<T2, T3, T> -> rt.third })
-
-    fun <T2 : Any, T3 : Any, T4 : Any> requires(
-            r2: Has<T2>,
-            r3: Has<T3>,
-            r4: Has<T4>
-    ): RFlow4<T2, T3, T4, T, U> =
-        RFlow4(this.rflow.local { rt: Tuple4<T2, T3, T4, T> -> rt.fourth })
-
-    fun <T2 : Any, T3 : Any, T4 : Any, T5 : Any> requires(
-            r2: Has<T2>,
-            r3: Has<T3>,
-            r4: Has<T4>,
-            r5: Has<T5>
-    ): RFlow5<T2, T3, T4, T5, T, U> =
-        RFlow5(this.rflow.local { rt: Tuple5<T2, T3, T4, T5, T> -> rt.fifth })
 
     fun fulfill(t1: T): Flow<U> =
         this.rflow.runReader(t1)
@@ -242,21 +201,9 @@ class RFlow2<T : Any, T2 : Any, U>(override val rflow: Reader<Pair<T, T2>, Flow<
     inline fun catch(noinline action: suspend (Pair<T, T2>, Throwable) -> Unit): RFlow2<T, T2, U> =
         fromPairs(this.genCatch(action))
 
-    fun <T3 : Any> requires(r: Has<T3>): RFlow3<T3, T, T2, U> =
+
+    fun <T3 : Any> requires(): RFlow3<T3, T, T2, U> =
         RFlow3(this.rflow.local { rt: Triple<T3, T, T2> -> Pair(rt.second, rt.third) })
-
-    fun <T3 : Any, T4 : Any> requires(
-            r3: Has<T3>,
-            r4: Has<T4>
-    ): RFlow4<T3, T4, T, T2, U> =
-        RFlow4(this.rflow.local { rt: Tuple4<T3, T4, T, T2> -> Pair(rt.third, rt.fourth) })
-
-    fun <T3 : Any, T4 : Any, T5 : Any> requires(
-            r3: Has<T3>,
-            r4: Has<T4>,
-            r5: Has<T5>
-    ): RFlow5<T3, T4, T5, T, T2, U> =
-        RFlow5(this.rflow.local { rt: Tuple5<T3, T4, T5, T, T2> -> Pair(rt.fourth, rt.fifth) })
 
     fun fulfill(t1: T, t2: T2): Flow<U> =
         this.rflow.runReader(Pair(t1, t2))
@@ -301,22 +248,9 @@ class RFlow3<T : Any, T2 : Any, T3 : Any, U>(override val rflow: Reader<Triple<T
     inline fun catch(crossinline action: suspend (Triple<T, T2, T3>, Throwable) -> Unit): RFlow3<T, T2, T3, U> =
         from(this.genCatch(action))
 
-    fun <T4 : Any> requires(r: Has<T4>): RFlow4<T4, T, T2, T3, U> =
+    fun <T4 : Any> requires(): RFlow4<T4, T, T2, T3, U> =
         RFlow4(this.rflow.local { rt: Tuple4<T4, T, T2, T3> ->
-            Triple(
-                rt.second,
-                rt.third,
-                rt.fourth
-            )
-        })
-
-    fun <T4 : Any, T5 : Any> requires(r: Has<T4>, r2: Has<T5>): RFlow5<T4, T5, T, T2, T3, U> =
-        RFlow5(this.rflow.local { rt: Tuple5<T4, T5, T, T2, T3> ->
-            Triple(
-                rt.third,
-                rt.fourth,
-                rt.fifth
-            )
+            Triple(rt.second, rt.third, rt.fourth)
         })
 
     fun fulfill(t1: T, t2: T2, t3: T3): Flow<U> =
@@ -370,14 +304,9 @@ class RFlow4<T : Any, T2 : Any, T3 : Any, T4 : Any, U>(override val rflow: Reade
     fun fulfill(t1: T, t2: T2, t3: T3, t4: T4): Flow<U> =
         this.rflow.runReader(Tuple4(t1, t2, t3, t4))
 
-    fun <T5 : Any> requires(r: Has<T5>): RFlow5<T5, T, T2, T3, T4, U> =
+    fun <T5 : Any> requires(): RFlow5<T5, T, T2, T3, T4, U> =
         RFlow5(this.rflow.local { rt: Tuple5<T5, T, T2, T3, T4> ->
-            Tuple4(
-                rt.second,
-                rt.third,
-                rt.fourth,
-                rt.fifth
-            )
+            Tuple4(rt.second, rt.third, rt.fourth, rt.fifth)
         })
 
     companion object {
@@ -431,6 +360,11 @@ class RFlow5<T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, U>(override val rf
     fun fulfill(t1: T, t2: T2, t3: T3, t4: T4, t5: T5): Flow<U> =
         this.rflow.runReader(Tuple5(t1, t2, t3, t4, t5))
 
+    fun <T6 : Any> requires(): RFlow6<T6, T, T2, T3, T4, T5, U> =
+        RFlow6(this.rflow.local { rt: Tuple6<T6, T, T2, T3, T4, T5> ->
+            Tuple5(rt.second, rt.third, rt.fourth, rt.fifth, rt.sixth)
+        })
+
     companion object {
         fun <T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, U> fromPairs(
                 rf: RFlow<Pair<T, Pair<T2, Pair<T3, Pair<T4, T5>>>>, U>
@@ -448,31 +382,100 @@ fun <T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, U> RFlow5<T, T2, T3, T4, T
         concurrency: Int = DEFAULT_CONCURRENCY): RFlow5<T, T2, T3, T4, T5, U> =
     RFlow5.from(this.genFlattenFlow(concurrency))
 
+class RFlow6<T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, T6 : Any, U>(override val rflow: Reader<Tuple6<T, T2, T3, T4, T5, T6>, Flow<U>>) :
+    RFlow<Tuple6<T, T2, T3, T4, T5, T6>, U>() {
+
+    @OptIn(ExperimentalTypeInference::class)
+    inline fun <R> transform(
+            @BuilderInference crossinline transform: suspend FlowCollector<R>.(Tuple6<T, T2, T3, T4, T5, T6>, U) -> Unit
+    ): RFlow6<T, T2, T3, T4, T5, T6, R> = from(this.genTransform(transform))
+
+    inline fun <R> mergeWith(concurrency: Int = DEFAULT_CONCURRENCY,
+                             crossinline transform: (Tuple6<T, T2, T3, T4, T5, T6>) -> Flow<R>): RFlow6<T, T2, T3, T4, T5, T6, R> =
+        from(this.genMergeWith(concurrency, transform))
+
+    inline fun <R> flatMap(concurrency: Int = DEFAULT_CONCURRENCY,
+                           crossinline transform: (Tuple6<T, T2, T3, T4, T5, T6>, U) -> RFlow6<T, T2, T3, T4, T5, T6, R>): RFlow6<T, T2, T3, T4, T5, T6, R> =
+        from(this.genFlatMap(concurrency, transform))
+
+    inline fun <R> mapFlow(crossinline transform: (Tuple6<T, T2, T3, T4, T5, T6>, Flow<U>) -> Flow<R>): RFlow6<T, T2, T3, T4, T5, T6, R> =
+        from(this.genMapFlow(transform))
+
+    inline fun <R> map(crossinline transform: suspend (Tuple6<T, T2, T3, T4, T5, T6>, U) -> R): RFlow6<T, T2, T3, T4, T5, T6, R> =
+        from(this.genMap(transform))
+
+    inline fun onEach(crossinline action: suspend (Tuple6<T, T2, T3, T4, T5, T6>, U) -> Unit): RFlow6<T, T2, T3, T4, T5, T6, U> =
+        from(this.genOnEach(action))
+
+    inline fun <R> parMap(crossinline transform: suspend (Tuple6<T, T2, T3, T4, T5, T6>, U) -> R): RFlow6<T, T2, T3, T4, T5, T6, R> =
+        from(this.genParMap(transform))
+
+    inline fun catch(crossinline action: suspend (Tuple6<T, T2, T3, T4, T5, T6>, Throwable) -> Unit): RFlow6<T, T2, T3, T4, T5, T6, U> =
+        from(this.genCatch(action))
+
+    fun fulfill(t1: T, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6): Flow<U> =
+        this.rflow.runReader(Tuple6(t1, t2, t3, t4, t5, t6))
+
+    companion object {
+        fun <T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, T6 : Any, U> from(rf: RFlow<Tuple6<T, T2, T3, T4, T5, T6>, U>): RFlow6<T, T2, T3, T4, T5, T6, U> =
+            RFlow6(rf.rflow.local { it })
+    }
+}
+
+fun <T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, T6 : Any, U> RFlow6<T, T2, T3, T4, T5, T6, Flow<U>>.flattenFlow(
+        concurrency: Int = DEFAULT_CONCURRENCY): RFlow6<T, T2, T3, T4, T5, T6, U> =
+    RFlow6.from(this.genFlattenFlow(concurrency))
+
+class RFlow7<T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, T6 : Any, T7 : Any, U>(override val rflow: Reader<Tuple7<T, T2, T3, T4, T5, T6, T7>, Flow<U>>) :
+    RFlow<Tuple7<T, T2, T3, T4, T5, T6, T7>, U>() {
+
+    @OptIn(ExperimentalTypeInference::class)
+    inline fun <R> transform(
+            @BuilderInference crossinline transform: suspend FlowCollector<R>.(Tuple7<T, T2, T3, T4, T5, T6, T7>, U) -> Unit
+    ): RFlow7<T, T2, T3, T4, T5, T6, T7, R> = from(this.genTransform(transform))
+
+    inline fun <R> mergeWith(concurrency: Int = DEFAULT_CONCURRENCY,
+                             crossinline transform: (Tuple7<T, T2, T3, T4, T5, T6, T7>) -> Flow<R>): RFlow7<T, T2, T3, T4, T5, T6, T7, R> =
+        from(this.genMergeWith(concurrency, transform))
+
+    inline fun <R> flatMap(concurrency: Int = DEFAULT_CONCURRENCY,
+                           crossinline transform: (Tuple7<T, T2, T3, T4, T5, T6, T7>, U) -> RFlow7<T, T2, T3, T4, T5, T6, T7, R>): RFlow7<T, T2, T3, T4, T5, T6, T7, R> =
+        from(this.genFlatMap(concurrency, transform))
+
+    inline fun <R> mapFlow(crossinline transform: (Tuple7<T, T2, T3, T4, T5, T6, T7>, Flow<U>) -> Flow<R>): RFlow7<T, T2, T3, T4, T5, T6, T7, R> =
+        from(this.genMapFlow(transform))
+
+    inline fun <R> map(crossinline transform: suspend (Tuple7<T, T2, T3, T4, T5, T6, T7>, U) -> R): RFlow7<T, T2, T3, T4, T5, T6, T7, R> =
+        from(this.genMap(transform))
+
+    inline fun onEach(crossinline action: suspend (Tuple7<T, T2, T3, T4, T5, T6, T7>, U) -> Unit): RFlow7<T, T2, T3, T4, T5, T6, T7, U> =
+        from(this.genOnEach(action))
+
+    inline fun <R> parMap(crossinline transform: suspend (Tuple7<T, T2, T3, T4, T5, T6, T7>, U) -> R): RFlow7<T, T2, T3, T4, T5, T6, T7, R> =
+        from(this.genParMap(transform))
+
+    inline fun catch(crossinline action: suspend (Tuple7<T, T2, T3, T4, T5, T6, T7>, Throwable) -> Unit): RFlow7<T, T2, T3, T4, T5, T6, T7, U> =
+        from(this.genCatch(action))
+
+    fun fulfill(t1: T, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7): Flow<U> =
+        this.rflow.runReader(Tuple7(t1, t2, t3, t4, t5, t6, t7))
+
+    companion object {
+        fun <T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, T6 : Any, T7 : Any, U> from(rf: RFlow<Tuple7<T, T2, T3, T4, T5, T6, T7>, U>): RFlow7<T, T2, T3, T4, T5, T6, T7, U> =
+            RFlow7(rf.rflow.local { it })
+    }
+}
+
+fun <T : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any, T6 : Any, T7 : Any, U> RFlow7<T, T2, T3, T4, T5, T6, T7, Flow<U>>.flattenFlow(
+        concurrency: Int = DEFAULT_CONCURRENCY): RFlow7<T, T2, T3, T4, T5, T6, T7, U> =
+    RFlow7.from(this.genFlattenFlow(concurrency))
+
+
 fun <U> Flow<U>.asR(): RFlowU<U> =
     RFlowU.from(this)
 
-fun <T : Any, U> Flow<U>.requires(t: Has<T>): RFlow1<T, U> =
+fun <T : Any, U> Flow<U>.requires(): RFlow1<T, U> =
     RFlow.pure(this)
 
-fun <T : Any, T2 : Any, U> Flow<U>.requires(t: Has<T>, t2: Has<T2>): RFlow2<T, T2, U> =
-    RFlow2.fromPairs(RFlow.pure(Reader { this }))
-
-fun <T : Any, T2 : Any, T3 : Any, U> Flow<U>.requires(
-        t: Has<T>,
-        t2: Has<T2>,
-        t3: Has<T3>
-): RFlow3<T, T2, T3, U> =
-    RFlow3.fromPairs(RFlow.pure(Reader { this }))
-
-fun <T : Any, T2 : Any, T3 : Any, T4 : Any, U> Flow<U>.requires(
-        t: Has<T>,
-        t2: Has<T2>,
-        t3: Has<T3>,
-        t4: Has<T4>
-): RFlow4<T, T2, T3, T4, U> =
-    RFlow4.fromPairs(RFlow.pure(Reader { this }))
-
-
-class Has<A>() {
-    companion object
-}
+fun <U> rFlowOf(vararg elements: U): RFlowU<U> = RFlowU.from(elements.asFlow())
+fun <U> rFlowOf(value: U): RFlowU<U> = RFlowU.from(flowOf(value))
